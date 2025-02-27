@@ -1,141 +1,180 @@
 import java.util.*;
 
-class Graph {
+public class WeightedGraphTraversals {
+    // Class to represent an edge with source, destination vertices and weight
     static class Edge {
         int source;
         int destination;
         int weight;
 
-        Edge(int source, int destination, int weight) {
+        public Edge(int source, int destination, int weight) {
             this.source = source;
             this.destination = destination;
             this.weight = weight;
         }
-
-        @Override
-        public String toString() {
-            return "(" + source + " -> " + destination + ", weight=" + weight + ")";
-        }
     }
 
-    int vertices;
-    List<List<Edge>> adjacencyList;
+    // Main method to run the program
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
 
-    Graph(int vertices) {
-        this.vertices = vertices;
-        adjacencyList = new ArrayList<>();
+        // Get the number of vertices
+        System.out.print("Enter the number of vertices: ");
+        int vertices = scanner.nextInt();
+
+        // Create an adjacency list representation of the weighted graph
+        ArrayList<ArrayList<Edge>> graph = new ArrayList<>();
         for (int i = 0; i < vertices; i++) {
-            adjacencyList.add(new ArrayList<>());
+            graph.add(new ArrayList<>());
         }
-    }
 
-    public void addEdge(int source, int destination, int weight) {
-        adjacencyList.get(source).add(new Edge(source, destination, weight));
-        adjacencyList.get(destination).add(new Edge(destination, source, weight)); // For undirected graph
-    }
+        // Get the number of edges
+        System.out.print("Enter the number of edges: ");
+        int edges = scanner.nextInt();
 
-    public void bfs(int startVertex) {
-        Queue<Pair> queue = new LinkedList<>();
-        boolean[] visited = new boolean[vertices];
+        // Get the edges with weights
+        System.out.println("Enter the edges (format: source destination weight):");
+        for (int i = 0; i < edges; i++) {
+            int source = scanner.nextInt();
+            int destination = scanner.nextInt();
+            int weight = scanner.nextInt();
 
-        queue.offer(new Pair(startVertex, String.valueOf(startVertex)));
-
-        System.out.println("BFS Traversal:");
-        while (!queue.isEmpty()) {
-            Pair current = queue.poll();
-
-            if (visited[current.vertex]) {
+            // Validate the vertices
+            if (source < 0 || source >= vertices || destination < 0 || destination >= vertices) {
+                System.out.println("Invalid edge: (" + source + ", " + destination + "). Skipping...");
                 continue;
             }
 
-            visited[current.vertex] = true;
-            System.out.println(current.vertex + " via path: " + current.pathSoFar);
+            // Add edge to the adjacency list (for undirected graph)
+            graph.get(source).add(new Edge(source, destination, weight));
+            graph.get(destination).add(new Edge(destination, source, weight)); // Remove this line for directed graph
+        }
 
-            List<Edge> neighbors = adjacencyList.get(current.vertex);
-            for (int i = 0; i < neighbors.size(); i++) {
-                Edge edge = neighbors.get(i);
-                if (!visited[edge.destination]) {
-                    queue.offer(new Pair(edge.destination, current.pathSoFar + " -> " + edge.destination));
+        // Get the starting vertex
+        System.out.print("Enter the starting vertex: ");
+        int startVertex = scanner.nextInt();
+
+        // Perform BFS, Recursive DFS, and Iterative DFS
+        System.out.println("\nBFS Traversal:");
+        bfs(graph, startVertex, vertices);
+
+        System.out.println("\nRecursive DFS Traversal:");
+        recursiveDFS(graph, startVertex, vertices);
+
+        System.out.println("\nIterative DFS Traversal:");
+        iterativeDFS(graph, startVertex, vertices);
+
+        scanner.close();
+    }
+
+    // BFS Implementation
+    public static void bfs(ArrayList<ArrayList<Edge>> graph, int startVertex, int vertices) {
+        Queue<Integer> queue = new LinkedList<>();
+        boolean[] visited = new boolean[vertices];
+        visited[startVertex] = true;
+        queue.add(startVertex);
+        int[] parent = new int[vertices];
+        Arrays.fill(parent, -1); // Initialize all parents to -1
+
+        // Array to store the distance (sum of weights) from start to each vertex
+        int[] distance = new int[vertices];
+        Arrays.fill(distance, Integer.MAX_VALUE); // Initialize all distances to infinity
+        distance[startVertex] = 0; // Distance to starting vertex is 0
+
+        while (!queue.isEmpty()) {
+            int currentVertex = queue.poll();
+            ArrayList<Edge> neighbors = graph.get(currentVertex);
+            for (Edge edge : neighbors) {
+                int neighbor = edge.destination;
+                int weight = edge.weight;
+                if (!visited[neighbor]) {
+                    // Mark neighbor as visited
+                    visited[neighbor] = true;
+
+                    // Store the parent (to reconstruct the path later)
+                    parent[neighbor] = currentVertex;
+
+                    // Calculate and store the distance
+                    distance[neighbor] = distance[currentVertex] + weight;
+
+                    // Enqueue the neighbor
+                    queue.add(neighbor);
                 }
+            }
+        }
+
+        // Print paths to all vertices
+        printPaths(parent, vertices, startVertex, distance);
+    }
+
+    // Recursive DFS Implementation
+    public static void recursiveDFS(ArrayList<ArrayList<Edge>> graph, int startVertex, int vertices) {
+        boolean[] visited = new boolean[vertices];
+        int[] parent = new int[vertices];
+        Arrays.fill(parent, -1); // Initialize all parents to -1
+        
+        dfsHelper(graph, startVertex, visited, parent);
+
+        System.out.println("\nPaths from Recursive DFS:");
+        printPaths(parent, vertices, startVertex, null); // Distance not calculated for DFS
+    }
+
+    private static void dfsHelper(ArrayList<ArrayList<Edge>> graph, int vertex, boolean[] visited, int[] parent) {
+        visited[vertex] = true;
+        for (Edge edge : graph.get(vertex)) {
+            if (!visited[edge.destination]) {
+                parent[edge.destination] = vertex;
+                dfsHelper(graph, edge.destination, visited, parent);
             }
         }
     }
 
-
-    public void dfs(int startVertex) {
-        Stack<Pair> stack = new Stack<>();
+    // Iterative DFS Implementation
+    public static void iterativeDFS(ArrayList<ArrayList<Edge>> graph, int startVertex, int vertices) {
+        Stack<Integer> stack = new Stack<>();
         boolean[] visited = new boolean[vertices];
+        int[] parent = new int[vertices];
+        Arrays.fill(parent, -1); // Initialize all parents to -1
 
-        stack.push(new Pair(startVertex, String.valueOf(startVertex))); // Use String.valueOf
+        stack.push(startVertex);
 
         while (!stack.isEmpty()) {
-            Pair current = stack.pop();
+            int currentVertex = stack.pop();
 
-            if (visited[current.vertex]) {
-                continue;
+            if (!visited[currentVertex]) {
+                visited[currentVertex] = true;
+
+                for (Edge edge : graph.get(currentVertex)) {
+                    if (!visited[edge.destination]) {
+                        parent[edge.destination] = currentVertex;
+                        stack.push(edge.destination);
+                    }
+                }
             }
+        }
 
-            visited[current.vertex] = true;
-            System.out.println(current.vertex + " via path: " + current.pathSoFar);
+        System.out.println("\nPaths from Iterative DFS:");
+        printPaths(parent, vertices, startVertex, null); // Distance not calculated for DFS
+    }
 
-            // Get the neighbors *before* the loop
-            List<Edge> neighbors = adjacencyList.get(current.vertex);
-
-            // Push neighbors in *reverse* order for true DFS
-            for (int i = neighbors.size() - 1; i >= 0; i--) {
-                Edge edge = neighbors.get(i);
-                if (!visited[edge.destination]) {
-                    stack.push(new Pair(edge.destination, current.pathSoFar + " -> " + edge.destination));
+    // Utility to print paths
+    static void printPaths(int[] parent, int vertices, int startVertex, int[] distance) {
+        for (int i = 0; i < vertices; i++) {
+            if (i != startVertex) {
+                System.out.print("Path from " + startVertex + " to " + i + " is: ");
+                printPath(parent, i);
+                if (distance != null) {
+                    System.out.println(" | Distance: " + distance[i]);
+                } else {
+                    System.out.println();
                 }
             }
         }
     }
 
-
-    // Helper class to track path
-    static class Pair {
-        int vertex;
-        String pathSoFar;
-
-        Pair(int vertex, String pathSoFar) {
-            this.vertex = vertex;
-            this.pathSoFar = pathSoFar;
-        }
-    }
-
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-
-        System.out.println("Enter the number of vertices:");
-        int vertices = sc.nextInt();
-
-        Graph graph = new Graph(vertices);
-
-        System.out.println("Enter the number of edges:");
-        int edges = sc.nextInt();
-
-        System.out.println("Enter the edges (source, destination, weight):");
-        for (int i = 0; i < edges; i++) {
-            int source = sc.nextInt();
-            int destination = sc.nextInt();
-            int weight = sc.nextInt();
-            graph.addEdge(source, destination, weight);
-        }
-
-        System.out.println("\nGraph Adjacency List:");
-        for (int i = 0; i < vertices; i++) {
-            System.out.println(i + ": " + graph.adjacencyList.get(i));
-        }
-
-        System.out.println("\nEnter the starting vertex for BFS:");
-        int startVertexBFS = sc.nextInt();
-        graph.bfs(startVertexBFS);
-
-        System.out.println("\nEnter the starting vertex for DFS:");
-        int startVertexDFS = sc.nextInt();
-        graph.dfs(startVertexDFS);
-
-
-        sc.close();
+    static void printPath(int[] parent, int vertex) {
+        if (vertex == -1) return;
+        printPath(parent, parent[vertex]);
+        System.out.print(vertex + " ");
     }
 }
