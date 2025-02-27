@@ -14,7 +14,6 @@ public class WeightedGraphTraversals {
         }
     }
 
-    // Main method to run the program
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
@@ -39,22 +38,15 @@ public class WeightedGraphTraversals {
             int destination = scanner.nextInt();
             int weight = scanner.nextInt();
 
-            // Validate the vertices
-            if (source < 0 || source >= vertices || destination < 0 || destination >= vertices) {
-                System.out.println("Invalid edge: (" + source + ", " + destination + "). Skipping...");
-                continue;
-            }
-
-            // Add edge to the adjacency list (for undirected graph)
+            // Add edge to the adjacency list (undirected graph)
             graph.get(source).add(new Edge(source, destination, weight));
-            graph.get(destination).add(new Edge(destination, source, weight)); // Remove this line for directed graph
+            graph.get(destination).add(new Edge(destination, source, weight));
         }
 
         // Get the starting vertex
         System.out.print("Enter the starting vertex: ");
         int startVertex = scanner.nextInt();
 
-        // Perform BFS, Recursive DFS, and Iterative DFS
         System.out.println("\nBFS Traversal:");
         bfs(graph, startVertex, vertices);
 
@@ -73,55 +65,43 @@ public class WeightedGraphTraversals {
         boolean[] visited = new boolean[vertices];
         visited[startVertex] = true;
         queue.add(startVertex);
-        int[] parent = new int[vertices];
-        Arrays.fill(parent, -1); // Initialize all parents to -1
 
-        // Array to store the distance (sum of weights) from start to each vertex
-        int[] distance = new int[vertices];
-        Arrays.fill(distance, Integer.MAX_VALUE); // Initialize all distances to infinity
-        distance[startVertex] = 0; // Distance to starting vertex is 0
+        int[] parent = new int[vertices];
+        Arrays.fill(parent, -1);
 
         while (!queue.isEmpty()) {
             int currentVertex = queue.poll();
-            ArrayList<Edge> neighbors = graph.get(currentVertex);
-            for (Edge edge : neighbors) {
+            for (int i = 0; i < graph.get(currentVertex).size(); i++) {
+                Edge edge = graph.get(currentVertex).get(i);
                 int neighbor = edge.destination;
-                int weight = edge.weight;
                 if (!visited[neighbor]) {
-                    // Mark neighbor as visited
                     visited[neighbor] = true;
-
-                    // Store the parent (to reconstruct the path later)
                     parent[neighbor] = currentVertex;
-
-                    // Calculate and store the distance
-                    distance[neighbor] = distance[currentVertex] + weight;
-
-                    // Enqueue the neighbor
                     queue.add(neighbor);
                 }
             }
         }
 
-        // Print paths to all vertices
-        printPaths(parent, vertices, startVertex, distance);
+        printPaths(parent, vertices, startVertex, null);
     }
 
     // Recursive DFS Implementation
     public static void recursiveDFS(ArrayList<ArrayList<Edge>> graph, int startVertex, int vertices) {
         boolean[] visited = new boolean[vertices];
         int[] parent = new int[vertices];
-        Arrays.fill(parent, -1); // Initialize all parents to -1
-        
+        Arrays.fill(parent, -1);
+
         dfsHelper(graph, startVertex, visited, parent);
 
         System.out.println("\nPaths from Recursive DFS:");
-        printPaths(parent, vertices, startVertex, null); // Distance not calculated for DFS
+        printPaths(parent, vertices, startVertex, null);
     }
 
     private static void dfsHelper(ArrayList<ArrayList<Edge>> graph, int vertex, boolean[] visited, int[] parent) {
         visited[vertex] = true;
-        for (Edge edge : graph.get(vertex)) {
+
+        for (int i = 0; i < graph.get(vertex).size(); i++) {
+            Edge edge = graph.get(vertex).get(i);
             if (!visited[edge.destination]) {
                 parent[edge.destination] = vertex;
                 dfsHelper(graph, edge.destination, visited, parent);
@@ -134,7 +114,7 @@ public class WeightedGraphTraversals {
         Stack<Integer> stack = new Stack<>();
         boolean[] visited = new boolean[vertices];
         int[] parent = new int[vertices];
-        Arrays.fill(parent, -1); // Initialize all parents to -1
+        Arrays.fill(parent, -1);
 
         stack.push(startVertex);
 
@@ -144,7 +124,8 @@ public class WeightedGraphTraversals {
             if (!visited[currentVertex]) {
                 visited[currentVertex] = true;
 
-                for (Edge edge : graph.get(currentVertex)) {
+                for (int i = 0; i < graph.get(currentVertex).size(); i++) {
+                    Edge edge = graph.get(currentVertex).get(i);
                     if (!visited[edge.destination]) {
                         parent[edge.destination] = currentVertex;
                         stack.push(edge.destination);
@@ -154,7 +135,7 @@ public class WeightedGraphTraversals {
         }
 
         System.out.println("\nPaths from Iterative DFS:");
-        printPaths(parent, vertices, startVertex, null); // Distance not calculated for DFS
+        printPaths(parent, vertices, startVertex, null);
     }
 
     // Utility to print paths
@@ -163,11 +144,7 @@ public class WeightedGraphTraversals {
             if (i != startVertex) {
                 System.out.print("Path from " + startVertex + " to " + i + " is: ");
                 printPath(parent, i);
-                if (distance != null) {
-                    System.out.println(" | Distance: " + distance[i]);
-                } else {
-                    System.out.println();
-                }
+                System.out.println();
             }
         }
     }
